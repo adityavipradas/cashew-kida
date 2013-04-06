@@ -120,9 +120,9 @@ def fluctuate_area():
     excess = []
     for i in range(len(total_dict)):
         #low_limit holds row number below the row of Tmax
-        low_limit = total_dict[total_dict.keys()[i]][2][0] - 1
+        low_limit = total_dict[total_dict.keys()[i]][2][0]
         #up_limit holds row number above the row of Tmax
-        up_limit = total_dict[total_dict.keys()[i]][2][0] + 1
+        up_limit = total_dict[total_dict.keys()[i]][2][0]
         #col is used to avoid repeated use of 'total_dict[total_dict.keys()[i]][2][1]' 
         col = total_dict[total_dict.keys()[i]][2][1]
         #lower_excess stores lower area
@@ -143,6 +143,7 @@ def fluctuate_area():
             up_limit = up_limit + 1
         #store the fluctuating area list in excess list
         excess.append(lower_excess + upper_excess)
+    print "\n"
     return excess        
 
 #fly_thick() calculates the flywheel thickness
@@ -165,8 +166,8 @@ def fly_thick(scotch_radius, density, rpm, Cs):
     density in kg/m3
     speed in rpm
     Cs as (Cs/100) and not in percentage"""
-fly = fly_thick(90, 7850, 30, 0.04)
-print "\nThe thickness of flywheel for ",len(fly)," tests in mm are:\n", fly
+fly = fly_thick(180, 7850, 30, 0.04)
+print "\nThe thickness of flywheel for ",len(fly)," tests in m are:\n", fly
 
     
 
