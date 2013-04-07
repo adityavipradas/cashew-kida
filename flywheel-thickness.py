@@ -81,51 +81,62 @@ def calculate_area():
     graph = []
     for i in range(len(area)):
         xaxis, yaxis = [], []
-        start = area[i].getRowStart()
+        
+        #define some values for code shortening
+        start = area[i].getRowStart()    
+        torque = area[i].getTorqueCol()
+        theta = area[i].getThetaCol()
+
         #initial_area stores area of the diagram from 0 to PI/2 radian
-        initial_area =  math.pi * sheet.cell_value(start, area[i].getTorqueCol())/2
+        initial_area =  math.pi * sheet.cell_value(start, torque)/2
         
         #for plotting
         for x in range(0, int(math.pi * 1000/2), 10):
             xaxis.append(x/1000)
-            yaxis.append(sheet.cell_value(start, area[i].getTorqueCol()))
+            yaxis.append(sheet.cell_value(start, torque))
 
         calc = 0
         #initiate tmax(maximum torque) to some value
-        tmax = sheet.cell_value(start, area[i].getTorqueCol())
+        tmax = sheet.cell_value(start, torque)
         #there are no values after 1000th row in the excel sheet, hence the parameter
         for j in range(start,1000, area[i].getStep()):
+
+            #define some values for code shortening
+            access_torque = sheet.cell_value(j, torque)
+            access_theta = sheet.cell_value(j, theta)
+            next_torque = sheet.cell_value(j + 1, torque)
+            next_theta = sheet.cell_value(j + 1, theta)
+            
             #terminate the addition when the cell value becomes zero...(I have added 0 specifically for this purpose in the sheet)
-            if sheet.cell_value(j+1, area[i].getTorqueCol()) == 0:
+            if next_torque == 0:
                 break
             
             #for plotting
-            xaxis.append(sheet.cell_value(j, area[i].getThetaCol()))
-            yaxis.append(sheet.cell_value(j, area[i].getTorqueCol()))
+            xaxis.append(access_theta)
+            yaxis.append(access_torque)
 
             #val is the list of consecutive theta values and their respective torque values to be used in trapezoidal rule
-            val = [sheet.cell_value(j, area[i].getThetaCol()), sheet.cell_value(j+1, area[i].getThetaCol()),\
-                   sheet.cell_value(j, area[i].getTorqueCol()), sheet.cell_value(j+1, area[i].getTorqueCol())]
+            val = [access_theta, next_theta, access_torque, next_torque]
             #find the maximum torque value from each test using this code snippet and store it in tmax..rowMax and colMax store its coordinates
             if val[2] > tmax:
                 tmax = val[2]
                 rowMax = j
-                colMax = area[i].getTorqueCol()
+                colMax = torque
             elif val[3] > tmax:
                 tmax = val[3]
                 rowMax = j+1
-                colMax = area[i].getTorqueCol()
+                colMax = torque
             """ calculate the total area under the crank-effort diagram and store it in calc
                 by trapezoidal rule,
                 I = sum(h * (f(a) + f(b))/2)"""
             calc = calc + (val[1] - val[0])*(val[2] + val[3])/2
         #calculate the final_area after shearing till PI radian"""    
-        final_area = (math.pi - sheet.cell_value(j, area[i].getThetaCol()))*sheet.cell_value(j, area[i].getTorqueCol())
+        final_area = (math.pi - access_theta)*access_torque
 
         #for plotting
-        for x in range(int(1000 * sheet.cell_value(j, area[i].getThetaCol())), int(1000 * math.pi), 10):
+        for x in range(int(1000 * access_theta), int(1000 * math.pi), 10):
             xaxis.append(x/1000)
-            yaxis.append(sheet.cell_value(j, area[i].getTorqueCol()))
+            yaxis.append(access_torque)
                          
         #total consists of the entire area
         #for 0 to PI radian consideration, use (1) and comment (2)
@@ -137,7 +148,7 @@ def calculate_area():
         #for 0 to PI radian consideration, use (3) and comment (4)
         #when only the angle turned by the scotch while the cashew nut gets sheared is considered, use (4) and comment (3)
         total_dict.update({total:[total/math.pi, tmax, [rowMax, colMax], area[i].getCashew(), j]}) #(3)
-        #total_dict.update({total:[total/sheet.cell_value(j, area[i].getThetaCol()), tmax, [rowMax, colMax], area[i].getCashew(), j]}) #(4)
+        #total_dict.update({total:[total/access_theta, tmax, [rowMax, colMax], area[i].getCashew(), j]}) #(4)
 
         #for plotting
         graph.append([xaxis, yaxis, area[i].getCashew(), total/math.pi])
@@ -152,37 +163,42 @@ def fluctuate_area():
     #initialise excess list which stores the fluctuating area
     excess = []
     for i in range(len(total_dict)):
+
+        #define some values for code shortening
+        theta = area[i].getThetaCol()
+        col = total_dict.values()[i][2][1]
+        tmean = total_dict.values()[i][0]
+        
         #low_limit holds row number below the row of Tmax
         low_limit = total_dict.values()[i][2][0]
         #up_limit holds row number above the row of Tmax
         up_limit = total_dict.values()[i][2][0]
-        #col is used to avoid repeated use of 'total_dict[total_dict.keys()[i]][2][1]' 
-        col = total_dict.values()[i][2][1]
+        
         #lower_excess stores lower area
         lower_excess = 0
         #upper_excess stores upper area
         upper_excess = 0
         
         #check till the value of torque becomes less than Tmean and use trapezoidal rule till then for lower area
-        while sheet.cell_value(low_limit, col) > total_dict.values()[i][0]:
+        while sheet.cell_value(low_limit, col) > tmean:
             if sheet.cell_value(low_limit, col) > sheet.cell_value(area[i].getRowStart(), col):
-                val = [sheet.cell_value(low_limit, area[i].getThetaCol()), sheet.cell_value(low_limit - 1, area[i].getThetaCol()),\
-                       sheet.cell_value(low_limit, col) - total_dict.values()[i][0], sheet.cell_value(low_limit - 1, col) - total_dict.values()[i][0]]
+                val = [sheet.cell_value(low_limit, theta), sheet.cell_value(low_limit - 1, theta),\
+                       sheet.cell_value(low_limit, col) - tmean, sheet.cell_value(low_limit - 1, col) - tmean]
                 lower_excess = lower_excess + (val[0] - val[1])*(val[2] + val[3])/2
             else:
-                lower_excess = lower_excess + (sheet.cell_value(area[i].getRowStart(), col) - total_dict.values()[i][0])*math.pi/2
+                lower_excess = lower_excess + (sheet.cell_value(area[i].getRowStart(), col) - tmean)*math.pi/2
                 break
             low_limit = low_limit - 1
             
         #check till the value of torque becomes less than Tmean and use trapezoidal rule till then for upper area
-        while sheet.cell_value(up_limit, col) > total_dict.values()[i][0]:
+        while sheet.cell_value(up_limit, col) > tmean:
             if sheet.cell_value(up_limit, col) > sheet.cell_value(total_dict.values()[i][4], col):
-                val = [sheet.cell_value(up_limit + 1, area[i].getThetaCol()), sheet.cell_value(up_limit, area[i].getThetaCol()),\
-                       sheet.cell_value(up_limit, col) - total_dict.values()[i][0], sheet.cell_value(up_limit + 1, col) - total_dict.values()[i][0]]
+                val = [sheet.cell_value(up_limit + 1, theta), sheet.cell_value(up_limit, theta),\
+                       sheet.cell_value(up_limit, col) - tmean, sheet.cell_value(up_limit + 1, col) - tmean]
                 upper_excess = upper_excess + (val[0] - val[1])*(val[2] + val[3])/2
             else:
-                upper_excess = upper_excess + (sheet.cell_value(total_dict.values()[i][4], col) - total_dict.values()[i][0])\
-                               *(math.pi - sheet.cell_value(total_dict.values()[i][4], area[i].getThetaCol()))
+                upper_excess = upper_excess + (sheet.cell_value(total_dict.values()[i][4], col) - tmean)\
+                               *(math.pi - sheet.cell_value(total_dict.values()[i][4], theta))
                 break
             up_limit = up_limit + 1
 
