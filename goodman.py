@@ -16,7 +16,8 @@ def goodman(Sut, Se, Syt):
     """plot line to define fatigue failure"""
     plot(l3, l4)
     """plot line at theta"""
-    plot((0, 774.97),(0, 198.28) , '--')
+    #plot((0, 774.97),(0, 198.28) , '--')
+    plot((Se,Se), (Syt, Syt), '--')
     title("Modified Goodman Diagram\n(region shaded in yellow is safe)")
     legend(["yield line", "goodman line", "line at theta"], loc = "best")
     xlabel("Sm")
@@ -28,6 +29,6 @@ def goodman(Sut, Se, Syt):
     show()
 
 """add Sut, Se and Syt in the given order and run the program"""
-goodman(400, 144.8655, 250)
+goodman(400, 154.66, 250)
     
     
